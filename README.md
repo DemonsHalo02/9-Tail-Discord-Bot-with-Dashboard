@@ -1,2 +1,7 @@
 # 9-Tail-Discord-Bot-with-Dashboard
 This is an official discord bot made by Halo for his discord server that includes rpg and moderation style commands as well as a full dashboard for managing the bot. This is also apart of his portfolio.
+To use this bot and dashboard you must first install node.js and then after using the code install these modules using the command prompt:
+npm install discord.js better-sqlite3 express cors dotenv node-cron node-fetch express-rate-limit leo-profanity
+npm install -g pm2
+Also if you encounter any bugs with the code let me know and I will fix them.
+Please also make sure to credit me if you use my code for your projects.
