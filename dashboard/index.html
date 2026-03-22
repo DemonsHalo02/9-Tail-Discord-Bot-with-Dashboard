@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>9-Tail Bot Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Login screen -->
+    <div id="login-screen" style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
+        <div class="login-card">
+            <h2>⚔️ 9Tail Dashboard</h2>
+            <p>Enter your API key to continue</p>
+            <input id="key-input" type="password" placeholder="API key" />
+            <button id="login-btn">Login</button>
+            <span id="login-error" style="display:none; color:var(--danger); font-size:13px;">
+                Invalid key — try again
+            </span>
+        </div>
+    </div>
+
+    <!-- Main app (hidden until logged in) -->
+    <div id="app" style="display:none;">
+        <nav>
+            <h1>⚔️ 9Tail</h1>
+            <div class="tabs" id="tab-bar">
+                <button class="tab active" data-tab="overview">Overview</button>
+                <button class="tab" data-tab="leaderboard">Leaderboard</button>
+                <button class="tab" data-tab="players">Players</button>
+                <button class="tab" data-tab="rpg">RPG</button>
+                <button class="tab" data-tab="economy">Economy</button>
+                <button class="tab" data-tab="modlogs">Mod Logs</button>
+                <button class="tab" data-tab="system">System</button>
+                <button class="tab" data-tab="commands">Commands</button>
+                <button class="tab" data-tab="shop">Shop</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <div id="status-dot" class="status-dot status-online" title="API Online"></div>
+                <button id="theme-toggle" title="Toggle theme">🌙</button>
+            </div>
+        </nav>
+
+        <!-- Notification banner -->
+        <div id="notification-banner" class="notif-banner" style="display:none;"></div>
+
+        <main>
+
+            <!-- Overview -->
+            <section id="overview" class="tab-content active">
+                <div class="section-header">
+                    <h2>Overview</h2>
+                    <div class="refresh-row">
+                        <label class="toggle-label"><input type="checkbox" id="auto-refresh"> Auto-refresh</label>
+                        <button id="refresh-btn">↻ Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Event banner -->
+                <div id="event-banner" style="display:none;" class="event-card"></div>
+
+                <div class="stat-grid">
+                    <div class="stat-card"><span id="stat-players">—</span><label>Players</label></div>
+                    <div class="stat-card"><span id="stat-bans">—</span><label>Bans</label></div>
+                    <div class="stat-card"><span id="stat-warns">—</span><label>Warnings</label></div>
+                    <div class="stat-card"><span id="stat-updated">—</span><label>Last updated</label></div>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <h3>Level distribution</h3><canvas id="chart-levels"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Mod actions</h3><canvas id="chart-modactions"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Top gambling winners</h3><canvas id="chart-gambling"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Guild bank rankings</h3><canvas id="chart-guilds"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Leaderboard -->
+            <section id="leaderboard" class="tab-content">
+                <h2>Leaderboard</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Level</th>
+                            <th>XP</th>
+                            <th>Yen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body"></tbody>
+                </table>
+            </section>
+
+            <!-- Players -->
+            <section id="players" class="tab-content">
+                <h2>Player search</h2>
+                <div class="search-row">
+                    <input id="player-search" placeholder="Enter Discord User ID" />
+                    <button id="player-search-btn">Search</button>
+                </div>
+                <div id="player-result" style="display:none;">
+                    <div class="player-card">
+                        <div class="player-header">
+                            <div class="avatar" id="player-avatar"></div>
+                            <div>
+                                <p class="player-name" id="player-name"></p>
+                                <p class="player-sub" id="player-id"></p>
+                            </div>
+                        </div>
+                        <div class="player-stats" id="player-stats"></div>
+                        <div class="player-edit">
+                            <h4>Edit player</h4>
+                            <div class="edit-grid">
+                                <label>Yen<input type="number" id="edit-yen"></label>
+                                <label>Level<input type="number" id="edit-level"></label>
+                                <label>XP<input type="number" id="edit-xp"></label>
+                                <label>HP<input type="number" id="edit-hp"></label>
+                                <label>Attack<input type="number" id="edit-attack"></label>
+                                <label>Defense<input type="number" id="edit-defense"></label>
+                            </div>
+                            <div class="edit-actions">
+                                <button id="save-player">Save changes</button>
+                                <button id="reset-player" class="btn-danger">Reset stats</button>
+                            </div>
+                        </div>
+                        <div class="player-inventory">
+                            <h4>Inventory</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Type</th>
+                                        <th>Value</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventory-body"></tbody>
+                            </table>
+                            <div class="add-item-row">
+                                <input id="item-name" placeholder="Item name" />
+                                <input id="item-type" placeholder="Type (weapon/armor/potion)" />
+                                <input id="item-value" type="number" placeholder="Value" />
+                                <button id="add-item-btn">Add item</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RPG -->
+            <section id="rpg" class="tab-content">
+                <div class="rpg-grid">
+
+                    <!-- Raid panel -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>🐉 Active raid</h3>
+                            <div class="search-row" style="margin:0;">
+                                <input id="raid-guild-id" placeholder="Guild ID" style="width:160px;" />
+                                <button id="raid-load-btn">Load</button>
+                            </div>
+                        </div>
+                        <div id="raid-panel">
+                            <p class="muted">Enter a guild ID to check for active raids.</p>
+                        </div>
+                    </div>
+
+                    <!-- Guilds panel -->
+                    <div class="panel">
+                        <h3>🏰 RPG guilds</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Guild</th>
+                                    <th>Owner</th>
+                                    <th>Members</th>
+                                    <th>Bank</th>
+                                </tr>
+                            </thead>
+                            <tbody id="guilds-body"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pets panel -->
+                    <div class="panel">
+                        <h3>🐾 All pets</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Pet</th>
+                                    <th>Type</th>
+                                    <th>Owner</th>
+                                    <th>Level</th>
+                                    <th>Hunger</th>
+                                    <th>Happiness</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pets-body"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Quests panel -->
+                    <div class="panel">
+                        <h3>📜 Active quests</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th>Quest</th>
+                                    <th>Progress</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quests-body"></tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Economy -->
+            <section id="economy" class="tab-content">
+                <div class="rpg-grid">
+
+                    <!-- Lottery panel -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>🎰 Lottery</h3>
+                            <button id="lottery-reset-btn" class="btn-danger btn-sm">Reset lottery</button>
+                        </div>
+                        <div id="lottery-panel"></div>
+                    </div>
+
+                    <!-- Gambling leaderboard -->
+                    <div class="panel">
+                        <h3>🎲 Gambling leaderboard</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Player</th>
+                                    <th>Won</th>
+                                    <th>Lost</th>
+                                    <th>Games</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gambling-body"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Trade history -->
+                    <div class="panel full-width">
+                        <h3>🔄 Trade history</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Offered</th>
+                                    <th>Requested</th>
+                                    <th>Yen</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trades-body"></tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Mod Logs -->
+            <section id="modlogs" class="tab-content">
+                <h2>Mod logs</h2>
+                <div class="search-row">
+                    <input id="guild-input" placeholder="Enter Guild ID" />
+                    <button id="load-logs">Load logs</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Target</th>
+                            <th>Mod</th>
+                            <th>Reason</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modlogs-body"></tbody>
+                </table>
+            </section>
+
+            <!-- System -->
+            <section id="system" class="tab-content">
+                <div class="rpg-grid">
+
+                    <!-- Status panel -->
+                    <div class="panel">
+                        <h3>🖥️ System status</h3>
+                        <div id="system-status-panel"></div>
+                    </div>
+
+                    <!-- Error log -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>❌ Error log</h3>
+                            <button id="clear-errors-btn" class="btn-danger btn-sm">Clear</button>
+                        </div>
+                        <div id="error-log-panel" class="log-feed"></div>
+                    </div>
+
+                    <!-- Backups -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>💾 Backups</h3>
+                            <button id="trigger-backup-btn">Backup now</button>
+                        </div>
+                        <div id="backups-panel"></div>
+                    </div>
+
+                    <!-- Cooldowns -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>⏳ Active cooldowns</h3>
+                            <button id="refresh-cooldowns-btn">↻</button>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Command</th>
+                                    <th>Remaining</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cooldowns-body"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Activity -->
+                    <div class="panel full-width">
+                        <h3>📋 Recent activity</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Target</th>
+                                    <th>Mod</th>
+                                    <th>Reason</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activity-body"></tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Commands -->
+            <section id="commands" class="tab-content">
+                <h2>Command manager</h2>
+                <div id="commands-list" class="commands-grid"></div>
+            </section>
+
+            <!-- Shop -->
+            <section id="shop" class="tab-content">
+                <h2>Shop manager</h2>
+                <p class="muted">Search a player then use the inventory panel to add or remove items.</p>
+                <div class="search-row">
+                    <input id="shop-player-id" placeholder="Enter Discord User ID" />
+                    <button id="shop-search-btn">Load inventory</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Type</th>
+                            <th>Value</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="shop-inventory-body"></tbody>
+                </table>
+                <div class="add-item-row">
+                    <input id="shop-item-name" placeholder="Item name" />
+                    <input id="shop-item-type" placeholder="Type (weapon/armor/potion)" />
+                    <input id="shop-item-value" type="number" placeholder="Value" />
+                    <button id="shop-add-item">Add item</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+
+</body>
+
+</html>
